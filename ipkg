@@ -1,0 +1,63 @@
+import subprocess
+import os
+import json
+import sys
+import click
+
+
+@click.command()
+@click.argument('package',type=click.STRING,required=0)
+@click.option('-l','--list',is_flag=True,help="liste all the package that can be installed")
+def ipkm(package,list):
+    if list == True:
+        with open("repos_url.json","r") as f:
+            repos = json.load(f)
+        for repo in repos.keys():
+            print(repo)
+    if package != None:
+        # Specify the URL of the Git repository you want to clone
+        with open("repos_url.json","r") as f:
+            repos = json.load(f)
+        if package not in repos.keys():
+            sys.exit()
+        working_dir = "/tmp"
+        os.chdir(working_dir)
+        repository_url = repos[package]
+        repo_name = repository_url.replace("https://github.com/ID1OS/","").replace(".git","")
+
+        # The git clone command
+        git_clone_command = ["git", "clone", repository_url]
+
+        try:
+            # Run the git clone command
+            subprocess.run(git_clone_command, check=True)
+            print("Git clone successful!")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during git clone: {e}")
+
+        os.chdir(repo_name)
+        repo_installer = f"{repo_name.lower()}_installer"
+        chmod_command = ["chmod", "+x",repo_installer]
+        try:
+            # Run the git clone command
+            subprocess.run(chmod_command, check=True)
+            print("chmod successful!")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during removing clone: {e}")
+
+        try:
+            # Run the git clone command
+            subprocess.run(f"./{repo_installer}", check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error during installing: {e}")
+
+        os.chdir(working_dir)
+
+        remove_repo = ["rm","-rf", f"{repo_name}"]
+        try:
+            # Run the git clone command
+            subprocess.run(remove_repo, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error during removing clone: {e}")
+
+ipkm()
